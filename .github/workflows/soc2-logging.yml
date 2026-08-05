@@ -1,0 +1,34 @@
+name: SOC2 logging compliance
+
+on:
+  workflow_call:
+
+jobs:
+  soc2-logging:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/checkout@v4
+        with:
+          repository: finelo-subpilot/compliance-rules
+          ref: v1
+          path: .compliance-rules
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      # semgrep pin mirrors pyproject.toml; both live in this repo and move together per tag
+      - run: pip install semgrep==1.172.0
+
+      - run: >-
+          semgrep scan
+          --config .compliance-rules/src/soc2_rules/rules/
+          --error --metrics=off
+          --exclude .compliance-rules
+          --exclude tests --exclude test --exclude migrations
+          --exclude __snapshots__ --exclude '*.stories.*'
+          --exclude '*_test.py' --exclude '*.test.ts' --exclude '*.test.tsx' --exclude conftest.py

@@ -1,0 +1,27 @@
+rules:
+  - id: soc2-logging.python.no-tokens-in-logs
+    languages: [python]
+    severity: ERROR
+    metadata:
+      family: tokens
+    message: >-
+      Credential value in a log call (token/secret/password/api_key/authorization).
+      SOC2: logged credentials grant account access to anyone who can read logs.
+      Log the opaque record id or a boolean instead: logger.info('session reused',
+      user_id=user_id) or has_token=bool(token).
+    patterns:
+      - pattern-either:
+          - patterns:
+              - pattern: $LOG.$METHOD(..., $KW=$V, ...)
+              - metavariable-regex:
+                  metavariable: $KW
+                  regex: (?i)^(?!has_|is_|num_)(?!.*_id$).*(token|secret|password|api_key|authorization).*$
+          - patterns:
+              - pattern-inside: $LOG.$METHOD(...)
+              - pattern-regex: \{[^}]*(?<!has_)(?i:token|secret|password|api_key|authorization)(?!_id)[^}]*\}
+      - metavariable-regex:
+          metavariable: $LOG
+          regex: ^(.*\.)?(logger|logging|log)$
+      - metavariable-regex:
+          metavariable: $METHOD
+          regex: ^(trace|debug|info|success|warning|warn|error|exception|critical|fatal|log|bind)$

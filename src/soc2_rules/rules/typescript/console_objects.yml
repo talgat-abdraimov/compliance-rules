@@ -1,0 +1,41 @@
+rules:
+  - id: soc2-logging.typescript.no-object-dumps-in-logs
+    languages: [typescript, javascript]
+    severity: ERROR
+    metadata:
+      family: console-objects
+    message: >-
+      Whole object in a log call (user/payload/session/data/event/req.body).
+      SOC2: full objects carry PII and tokens. Log the specific opaque fields
+      instead, e.g. console.log('checkout started', user.id).
+    patterns:
+      - pattern-either:
+          - patterns:
+              - pattern: console.$METHOD(..., $OBJ, ...)
+              - metavariable-regex:
+                  metavariable: $OBJ
+                  regex: ^(user|payload|session|data|event|(req|request|ctx)\.body)$
+          - patterns:
+              - pattern: $LOG.$METHOD(..., $OBJ, ...)
+              - metavariable-regex:
+                  metavariable: $LOG
+                  regex: ^(.*\.)?(logger|log)$
+              - metavariable-regex:
+                  metavariable: $OBJ
+                  regex: ^(user|payload|session|data|event|(req|request|ctx)\.body)$
+          - patterns:
+              - pattern: "console.$METHOD(..., { ...$OBJ }, ...)"
+              - metavariable-regex:
+                  metavariable: $OBJ
+                  regex: ^(user|payload|session|data|event)$
+          - patterns:
+              - pattern: "$LOG.$METHOD(..., { ...$OBJ }, ...)"
+              - metavariable-regex:
+                  metavariable: $LOG
+                  regex: ^(.*\.)?(logger|log)$
+              - metavariable-regex:
+                  metavariable: $OBJ
+                  regex: ^(user|payload|session|data|event)$
+      - metavariable-regex:
+          metavariable: $METHOD
+          regex: ^(log|info|warn|error|debug|trace|fatal)$

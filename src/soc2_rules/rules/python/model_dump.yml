@@ -1,0 +1,22 @@
+rules:
+  - id: soc2-logging.python.no-model-dump-in-logs
+    languages: [python]
+    severity: ERROR
+    metadata:
+      family: model-dump
+    message: >-
+      Full model serialization in a log call. SOC2: payload dumps carry PII
+      (emails, tokens, amounts). Log opaque ids instead:
+      logger.info('event received', user_id=payload.user_id).
+    patterns:
+      - pattern-inside: $LOG.$METHOD(...)
+      - metavariable-regex:
+          metavariable: $LOG
+          regex: ^(.*\.)?(logger|logging|log)$
+      - metavariable-regex:
+          metavariable: $METHOD
+          regex: ^(trace|debug|info|success|warning|warn|error|exception|critical|fatal|log|bind)$
+      - pattern-either:
+          - pattern: $X.model_dump(...)
+          - pattern: $X.model_dump_json(...)
+          - pattern: dict($X)

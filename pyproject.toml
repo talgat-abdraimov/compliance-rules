@@ -1,0 +1,16 @@
+[project]
+name = "soc2-rules"
+version = "1.0.0"
+description = "SOC2 logging-compliance semgrep rule pack for finelo-subpilot repos"
+requires-python = ">=3.13"
+dependencies = ["semgrep==1.172.0"]
+
+[project.scripts]
+soc2-logging = "soc2_rules.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/soc2_rules"]

@@ -1,0 +1,6 @@
+- id: soc2-logging
+  name: SOC2 logging compliance (no PII/tokens/payloads in logs)
+  entry: soc2-logging
+  language: python
+  types_or: [python, ts, tsx, javascript, jsx]
+  exclude: ^(tests?|migrations)/|/(tests?|migrations)/|_test\.py$|\.test\.(ts|tsx|js|jsx)$|conftest\.py$

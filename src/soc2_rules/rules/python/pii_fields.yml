@@ -1,0 +1,28 @@
+# PII_DENYLIST: email|phone|address|first_name|last_name|full_name|dob|birth\w*|card\w*|pan|cvv|iban|account_number|ssn|passport|national_id|client_ip|ip_address|sender|subject|snippet|body|lat|lon
+rules:
+  - id: soc2-logging.python.no-pii-fields-in-logs
+    languages: [python]
+    severity: ERROR
+    metadata:
+      family: pii-fields
+    message: >-
+      PII-named value in a log call (denylist: email, phone, address, names, dob,
+      card data, ssn, ip, sender/subject/snippet/body, lat/lon). SOC2: logs must
+      carry no personal data. Log the opaque record id instead: email_id=message.email_id,
+      user_id=user.id. Names suffixed _id are always allowed.
+    patterns:
+      - pattern-either:
+          - patterns:
+              - pattern: $LOG.$METHOD(..., $KW=$V, ...)
+              - metavariable-regex:
+                  metavariable: $KW
+                  regex: (?i)^(?!.*_id$)(?:\w+_)?(email|phone|address|first_name|last_name|full_name|dob|birth\w*|card\w*|pan|cvv|iban|account_number|ssn|passport|national_id|client_ip|ip_address|sender|subject|snippet|body|lat|lon)$
+          - patterns:
+              - pattern-inside: $LOG.$METHOD(...)
+              - pattern-regex: \{[^}]*\b(?i:email|phone|address|first_name|last_name|full_name|dob|birth\w*|card\w*|pan|cvv|iban|account_number|ssn|passport|national_id|client_ip|ip_address|sender|subject|snippet|body|lat|lon)\b(?!_id)[^}]*\}
+      - metavariable-regex:
+          metavariable: $LOG
+          regex: ^(.*\.)?(logger|logging|log)$
+      - metavariable-regex:
+          metavariable: $METHOD
+          regex: ^(trace|debug|info|success|warning|warn|error|exception|critical|fatal|log|bind)$

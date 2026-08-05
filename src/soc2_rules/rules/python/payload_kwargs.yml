@@ -1,0 +1,39 @@
+rules:
+  - id: soc2-logging.python.no-full-payload-kwargs
+    languages: [python]
+    severity: ERROR
+    metadata:
+      family: payload-kwargs
+    message: >-
+      Whole object bound to a log kwarg (payload=/data=/event=/kwargs=/args=).
+      SOC2: full payloads carry PII and tokens. Log the specific opaque fields
+      instead: logger.info('webhook received', webhook_code=payload.webhook_code,
+      user_id=payload.user_id).
+    patterns:
+      - pattern-either:
+          - pattern-either:
+              - pattern: $LOG.$METHOD(..., payload=$V, ...)
+              - pattern: $LOG.$METHOD(..., data=$V, ...)
+              - pattern: $LOG.$METHOD(..., event=$V, ...)
+              - pattern: $LOG.$METHOD(..., kwargs=$V, ...)
+              - pattern: $LOG.$METHOD(..., args=$V, ...)
+          - patterns:
+              - pattern-either:
+                  - pattern: |
+                      $ATTRS = {..., 'payload': $V, ...}
+                      ...
+                      $LOG.$METHOD(..., **$ATTRS)
+                  - pattern: |
+                      $ATTRS = {..., 'data': $V, ...}
+                      ...
+                      $LOG.$METHOD(..., **$ATTRS)
+                  - pattern: |
+                      $ATTRS = {..., 'event': $V, ...}
+                      ...
+                      $LOG.$METHOD(..., **$ATTRS)
+      - metavariable-regex:
+          metavariable: $LOG
+          regex: ^(.*\.)?(logger|logging|log)$
+      - metavariable-regex:
+          metavariable: $METHOD
+          regex: ^(trace|debug|info|success|warning|warn|error|exception|critical|fatal|log|bind)$
