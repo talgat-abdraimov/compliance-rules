@@ -1,4 +1,4 @@
-# PII_DENYLIST: email|phone|address|first_name|last_name|full_name|dob|birth\w*|card\w*|pan|cvv|iban|account_number|ssn|passport|national_id|client_ip|ip_address|sender|subject|snippet|body|lat|lon
+# PII_DENYLIST: email|phone|address|first_name|last_name|full_name|dob|birth|card|pan|cvv|iban|account_number|ssn|passport|national_id|passport_id|tax_id|client_ip|ip_address|sender|subject|snippet|body|lat|lon|lng|latitude|longitude
 rules:
   - id: soc2-logging.python.no-pii-fields-in-logs
     languages: [python]
@@ -7,22 +7,47 @@ rules:
       family: pii-fields
     message: >-
       PII-named value in a log call (denylist: email, phone, address, names, dob,
-      card data, ssn, ip, sender/subject/snippet/body, lat/lon). SOC2: logs must
-      carry no personal data. Log the opaque record id instead: email_id=message.email_id,
-      user_id=user.id. Names suffixed _id are always allowed.
+      card data, ssn, passport, ip, sender/subject/snippet/body, coordinates).
+      SOC2: logs must carry no personal data. Log the opaque record id instead:
+      email_id=message.email_id, user_id=user.id. Names suffixed _id, _count,
+      _hash, _masked or _verified are allowed; identity-document names
+      (national_id, passport_id, tax_id) are not.
     patterns:
+      # Every branch binds $V to the offending name or expression, so the
+      # denylist below is defined once and applies to all of them.
       - pattern-either:
+          - pattern: $LOG.$METHOD(..., $V=$X, ...)
           - patterns:
-              - pattern: $LOG.$METHOD(..., $KW=$V, ...)
+              - pattern: $LOG.$METHOD(..., $X=$V, ...)
+              # A quoted constant is a literal, not the user's data.
               - metavariable-regex:
-                  metavariable: $KW
-                  regex: (?i)^(?!.*_id$)(?:\w+_)?(email|phone|address|first_name|last_name|full_name|dob|birth\w*|card\w*|pan|cvv|iban|account_number|ssn|passport|national_id|client_ip|ip_address|sender|subject|snippet|body|lat|lon)$
+                  metavariable: $V
+                  regex: ^[^"']
+          - patterns:
+              - pattern: $LOG.$METHOD(..., $V, ...)
+              # A log message that happens to equal a denylist word is not a leak.
+              - metavariable-regex:
+                  metavariable: $V
+                  regex: ^[^"']
           - patterns:
               - pattern-inside: $LOG.$METHOD(...)
-              - pattern-regex: \{[^}]*\b(?i:email|phone|address|first_name|last_name|full_name|dob|birth\w*|card\w*|pan|cvv|iban|account_number|ssn|passport|national_id|client_ip|ip_address|sender|subject|snippet|body|lat|lon)\b(?!_id)[^}]*\}
+              - pattern: f"...{$V}..."
+          - patterns:
+              - pattern-inside: $LOG.$METHOD(...)
+              - pattern: "{..., $V: $X, ...}"
+          - patterns:
+              - pattern-inside: $LOG.$METHOD(...)
+              - pattern: "{..., $X: $V, ...}"
+              # A quoted constant is a literal, not the user's data.
+              - metavariable-regex:
+                  metavariable: $V
+                  regex: ^[^"']
+      - metavariable-regex:
+          metavariable: $V
+          regex: (?i)^["']?(?:\w+\.)*(?:(?:\w+_)*(?:national_id|passport_id|tax_id)|(?!(?:has|is|any|num|only|show|use|allow|with)_)(?!\w*_(?:id|ids|count|len|length|size|bytes|type|kind|status|domain|hash|masked|redacted|verified|present|exists|enabled|flag|score)$)(?:(?:\w+_)*(?:phone|address|card|birth|passport|ssn)\w*|(?:\w+_)*(?:email|first_name|last_name|full_name|dob|pan|cvv|iban|account_number|sender|subject|snippet|body|latitude|longitude|client_ip|ip_address)|lat|lon|lng))["']?$
       - metavariable-regex:
           metavariable: $LOG
-          regex: ^(.*\.)?(logger|logging|log)$
+          regex: (?i)^(.*\.)?_*(logger|logging|log)$
       - metavariable-regex:
           metavariable: $METHOD
-          regex: ^(trace|debug|info|success|warning|warn|error|exception|critical|fatal|log|bind)$
+          regex: ^(trace|debug|info|success|warning|warn|error|exception|critical|fatal|log|msg|bind)$

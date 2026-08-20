@@ -8,20 +8,42 @@ rules:
       Credential value in a log call (token/secret/password/api_key/authorization).
       SOC2: logged credentials grant account access to anyone who can read logs.
       Log the opaque record id or a boolean instead: logger.info('session reused',
-      user_id=user_id) or has_token=bool(token).
+      user_id=user_id) or has_token=bool(token). LLM token counts (prompt_tokens,
+      max_tokens, token_count) and references (secret_name, token_url) are allowed.
     patterns:
       - pattern-either:
+          - pattern: $LOG.$METHOD(..., $V=$X, ...)
           - patterns:
-              - pattern: $LOG.$METHOD(..., $KW=$V, ...)
+              - pattern: $LOG.$METHOD(..., $X=$V, ...)
+              # A quoted constant is a literal, not the user's data.
               - metavariable-regex:
-                  metavariable: $KW
-                  regex: (?i)^(?!has_|is_|num_)(?!.*_id$).*(token|secret|password|api_key|authorization).*$
+                  metavariable: $V
+                  regex: ^[^"']
+          - patterns:
+              - pattern: $LOG.$METHOD(..., $V, ...)
+              # A log message that happens to equal a denylist word is not a leak.
+              - metavariable-regex:
+                  metavariable: $V
+                  regex: ^[^"']
           - patterns:
               - pattern-inside: $LOG.$METHOD(...)
-              - pattern-regex: \{[^}]*(?<!has_)(?i:token|secret|password|api_key|authorization)(?!_id)[^}]*\}
+              - pattern: f"...{$V}..."
+          - patterns:
+              - pattern-inside: $LOG.$METHOD(...)
+              - pattern: "{..., $V: $X, ...}"
+          - patterns:
+              - pattern-inside: $LOG.$METHOD(...)
+              - pattern: "{..., $X: $V, ...}"
+              # A quoted constant is a literal, not the user's data.
+              - metavariable-regex:
+                  metavariable: $V
+                  regex: ^[^"']
+      - metavariable-regex:
+          metavariable: $V
+          regex: (?i)^["']?(?:\w+\.)*(?!(?:has|is|num|max|min|total|prompt|completion|input|output|cached|reasoning|thinking|remaining)_)(?!\w*_(?:id|ids|count|len|length|size|used|remaining|limit|type|kind|status|hash|masked|redacted|present|exists|expiry|ttl|name|arn|path|ref|url|uri|prefix|source|provider|header|version|scheme)$)(?:\w+_)*(?:token|secret|password|passwd|api_key|apikey|access_key|secret_key|private_key|client_secret|credential|authorization|bearer|otp)\w*["']?$
       - metavariable-regex:
           metavariable: $LOG
-          regex: ^(.*\.)?(logger|logging|log)$
+          regex: (?i)^(.*\.)?_*(logger|logging|log)$
       - metavariable-regex:
           metavariable: $METHOD
-          regex: ^(trace|debug|info|success|warning|warn|error|exception|critical|fatal|log|bind)$
+          regex: ^(trace|debug|info|success|warning|warn|error|exception|critical|fatal|log|msg|bind)$

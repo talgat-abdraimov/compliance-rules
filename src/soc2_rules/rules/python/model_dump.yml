@@ -5,18 +5,31 @@ rules:
     metadata:
       family: model-dump
     message: >-
-      Full model serialization in a log call. SOC2: payload dumps carry PII
-      (emails, tokens, amounts). Log opaque ids instead:
-      logger.info('event received', user_id=payload.user_id).
+      Full object serialization in a log call (model_dump/dict()/vars()/asdict()/
+      json.dumps()/__dict__). SOC2: payload dumps carry PII (emails, tokens,
+      amounts). Log opaque ids instead: logger.info('event received',
+      user_id=payload.user_id).
     patterns:
       - pattern-inside: $LOG.$METHOD(...)
       - metavariable-regex:
           metavariable: $LOG
-          regex: ^(.*\.)?(logger|logging|log)$
+          regex: (?i)^(.*\.)?_*(logger|logging|log)$
       - metavariable-regex:
           metavariable: $METHOD
-          regex: ^(trace|debug|info|success|warning|warn|error|exception|critical|fatal|log|bind)$
+          regex: ^(trace|debug|info|success|warning|warn|error|exception|critical|fatal|log|msg|bind)$
       - pattern-either:
           - pattern: $X.model_dump(...)
           - pattern: $X.model_dump_json(...)
+          - pattern: $X.to_dict(...)
+          - pattern: $X.__dict__
           - pattern: dict($X)
+          - pattern: vars($X)
+          - pattern: asdict($X)
+          - pattern: dataclasses.asdict($X)
+          - pattern: $X.dict(...)
+          - patterns:
+              - pattern-either:
+                  - pattern: json.dumps(...)
+                  - pattern: orjson.dumps(...)
+              - pattern-not: json.dumps({...}, ...)
+              - pattern-not: orjson.dumps({...}, ...)

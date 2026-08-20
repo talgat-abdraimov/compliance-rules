@@ -5,35 +5,43 @@ rules:
     metadata:
       family: payload-kwargs
     message: >-
-      Whole object bound to a log kwarg (payload=/data=/event=/kwargs=/args=).
+      Whole object in a log call (payload/data/event/kwargs/args, as a kwarg,
+      a positional arg, an f-string interpolation or an extra={...} entry).
       SOC2: full payloads carry PII and tokens. Log the specific opaque fields
       instead: logger.info('webhook received', webhook_code=payload.webhook_code,
       user_id=payload.user_id).
     patterns:
       - pattern-either:
-          - pattern-either:
-              - pattern: $LOG.$METHOD(..., payload=$V, ...)
-              - pattern: $LOG.$METHOD(..., data=$V, ...)
-              - pattern: $LOG.$METHOD(..., event=$V, ...)
-              - pattern: $LOG.$METHOD(..., kwargs=$V, ...)
-              - pattern: $LOG.$METHOD(..., args=$V, ...)
+          - pattern: $LOG.$METHOD(..., $V=$X, ...)
           - patterns:
-              - pattern-either:
-                  - pattern: |
-                      $ATTRS = {..., 'payload': $V, ...}
-                      ...
-                      $LOG.$METHOD(..., **$ATTRS)
-                  - pattern: |
-                      $ATTRS = {..., 'data': $V, ...}
-                      ...
-                      $LOG.$METHOD(..., **$ATTRS)
-                  - pattern: |
-                      $ATTRS = {..., 'event': $V, ...}
-                      ...
-                      $LOG.$METHOD(..., **$ATTRS)
+              - pattern: $LOG.$METHOD(..., $X=$V, ...)
+              # A quoted constant is a literal, not the user's data.
+              - metavariable-regex:
+                  metavariable: $V
+                  regex: ^[^"']
+          - patterns:
+              - pattern: $LOG.$METHOD(..., $V, ...)
+              # A log message that happens to equal a denylist word is not a leak.
+              - metavariable-regex:
+                  metavariable: $V
+                  regex: ^[^"']
+          - patterns:
+              - pattern-inside: $LOG.$METHOD(...)
+              - pattern: f"...{$V}..."
+          - patterns:
+              - pattern-inside: $LOG.$METHOD(...)
+              - pattern: "{..., $V: $X, ...}"
+          # Attributes built one statement earlier and splatted into the call.
+          - pattern: |
+              $ATTRS = {..., $V: $X, ...}
+              ...
+              $LOG.$METHOD(..., **$ATTRS)
+      - metavariable-regex:
+          metavariable: $V
+          regex: (?i)^["']?(?:\w+\.)*(?:payload|data|event|kwargs|args)["']?$
       - metavariable-regex:
           metavariable: $LOG
-          regex: ^(.*\.)?(logger|logging|log)$
+          regex: (?i)^(.*\.)?_*(logger|logging|log)$
       - metavariable-regex:
           metavariable: $METHOD
-          regex: ^(trace|debug|info|success|warning|warn|error|exception|critical|fatal|log|bind)$
+          regex: ^(trace|debug|info|success|warning|warn|error|exception|critical|fatal|log|msg|bind)$

@@ -20,6 +20,9 @@ def call_maps_api(client, response):
         raw=response.text,
     )
 
+    # ruleid: soc2-logging.python.no-response-text-in-logs
+    logger.error('upstream failed', parsed=response.json())
+
     # ok: soc2-logging.python.no-response-text-in-logs
     logger.error('google api error', status_code=response.status_code)
 
@@ -28,6 +31,9 @@ def call_maps_api(client, response):
 
     # ok: soc2-logging.python.no-response-text-in-logs
     logger.debug('body length', text_len=len(response.text))
+
+    # ok: soc2-logging.python.no-response-text-in-logs
+    logger.info('items received', item_count=len(response.json()))
 
     # ok: soc2-logging.python.no-response-text-in-logs
     parsed = response.text
