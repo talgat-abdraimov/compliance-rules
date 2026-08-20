@@ -6,29 +6,31 @@ on:
 jobs:
   soc2-logging:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
 
-      - uses: actions/checkout@v4
+      # job_workflow_sha is the commit of THIS workflow file, so the rules a
+      # consumer gets always match the ref they called (@v2, @v2.0.0, or a sha).
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           repository: finelo-subpilot/compliance-rules
-          ref: v1
+          ref: ${{ github.job_workflow_sha }}
           path: .compliance-rules
+          persist-credentials: false
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: '3.13'
 
-      # semgrep pin mirrors pyproject.toml; both live in this repo and move together per tag
-      - run: pip install semgrep==1.172.0
+      # Installing the pack pins semgrep from its pyproject.toml (one pin, not
+      # two) and runs the same entry point the pre-commit hook runs.
+      - run: pip install ./.compliance-rules
 
-      - run: >-
-          semgrep scan
-          --config .compliance-rules/src/soc2_rules/rules/
-          --error --metrics=off
-          --exclude .compliance-rules
-          --exclude tests --exclude test --exclude migrations
-          --exclude __snapshots__ --exclude '*.stories.*'
-          --exclude '*_test.py' --exclude '*.test.ts' --exclude '*.test.tsx' --exclude conftest.py
+      - run: soc2-logging . --exclude .compliance-rules
+
+      - run: python .compliance-rules/scripts/check_suppressions.py .

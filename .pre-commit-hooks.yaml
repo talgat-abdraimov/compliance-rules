@@ -3,4 +3,7 @@
   entry: soc2-logging
   language: python
   types_or: [python, ts, tsx, javascript, jsx]
-  exclude: ^(tests?|migrations)/|/(tests?|migrations)/|_test\.py$|\.test\.(ts|tsx|js|jsx)$|conftest\.py$
+  # semgrep ignores --exclude for explicitly passed filenames, so test/generated
+  # paths are filtered here. Keep in sync with EXCLUDED in src/soc2_rules/cli.py.
+  exclude: ^(tests?|migrations)/|/(tests?|migrations)/|(^|/)__(tests|snapshots)__/|(^|/)test_[^/]*\.py$|_test\.py$|conftest\.py$|\.(test|spec|stories)\.(ts|tsx|js|jsx)$
+  minimum_pre_commit_version: '2.9.0'

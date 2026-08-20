@@ -5,7 +5,7 @@ rules:
     metadata:
       family: response-text
     message: >-
-      Raw response body (.text/.content) in a log call. SOC2: third-party
+      Raw response body (.text/.content/.json()) in a log call. SOC2: third-party
       responses embed user data (addresses, emails, account info). Log the
       status and an opaque request id instead: logger.error('upstream failed',
       status_code=response.status_code, request_id=request_id).
@@ -13,11 +13,12 @@ rules:
       - pattern-inside: $LOG.$METHOD(...)
       - metavariable-regex:
           metavariable: $LOG
-          regex: ^(.*\.)?(logger|logging|log)$
+          regex: (?i)^(.*\.)?_*(logger|logging|log)$
       - metavariable-regex:
           metavariable: $METHOD
-          regex: ^(trace|debug|info|success|warning|warn|error|exception|critical|fatal|log|bind)$
+          regex: ^(trace|debug|info|success|warning|warn|error|exception|critical|fatal|log|msg|bind)$
       - pattern-not-inside: len(...)
       - pattern-either:
           - pattern: $R.text
           - pattern: $R.content
+          - pattern: $R.json()
