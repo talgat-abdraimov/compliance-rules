@@ -1,16 +1,15 @@
 # compliance-rules
 
-SOC2 logging-compliance gate for finelo-subpilot repos: semgrep rules that block PII,
-credentials, and raw payloads from reaching application logs. Consumed everywhere as a
-pre-commit hook (instant, LLM-readable fix prompts) and a required CI check
-(non-bypassable control).
+SOC2 logging-compliance gate: semgrep rules that block PII, credentials, and raw
+payloads from reaching application logs. Consumed everywhere as a pre-commit hook
+(instant, LLM-readable fix prompts) and a required CI check (non-bypassable control).
 
 ## Adopt in your repo (self-service, ~5 minutes)
 
 **1. Local gate** — append to `.pre-commit-config.yaml` (create one if absent):
 
 ```yaml
-  - repo: https://github.com/finelo-subpilot/compliance-rules
+  - repo: https://github.com/talgat-abdraimov/compliance-rules
     rev: v2.0.0
     hooks:
       - id: soc2-logging
@@ -26,7 +25,7 @@ on:
 
 jobs:
   soc2-logging:
-    uses: finelo-subpilot/compliance-rules/.github/workflows/soc2-logging.yml@v2
+    uses: talgat-abdraimov/compliance-rules/.github/workflows/soc2-logging.yml@v2
 ```
 
 **3. Agent guidance** — append the section from [docs/AGENTS-snippet.md](docs/AGENTS-snippet.md) to your `AGENTS.md` (create the file if absent) so coding agents write compliant logs on the first try.
@@ -34,7 +33,7 @@ jobs:
 Then run `pre-commit run soc2-logging --all-files`, fix what it finds (log opaque `_id`s instead of payloads/PII — the rule messages tell you exactly what to change), and make the check required:
 
 ```bash
-repo=finelo-subpilot/<repo>
+repo=<org>/<repo>
 branch=$(gh repo view "$repo" --json defaultBranchRef --jq .defaultBranchRef.name)
 gh api -X POST "repos/$repo/branches/$branch/protection/required_status_checks/contexts" \
   -f 'contexts[]=soc2-logging / soc2-logging'

@@ -1,7 +1,7 @@
 [project]
 name = "soc2-rules"
 version = "2.0.0"
-description = "SOC2 logging-compliance semgrep rule pack for finelo-subpilot repos"
+description = "SOC2 logging-compliance semgrep rule pack"
 # pre-commit builds hook environments with its own interpreter, so the floor is
 # semgrep's (>=3.10), not the version this repo is developed on.
 requires-python = ">=3.10"
