@@ -19,8 +19,8 @@ grep -rn "nosemgrep: soc2-logging" --include='*.py' --include='*.ts' --include='
 Org-wide without checkouts:
 
 ```bash
-gh search code --owner finelo-subpilot "nosemgrep: soc2-logging" --limit 100
-gh search code --owner finelo-subpilot "nosemgrep" --limit 100   # unattributed suppressions
+gh search code --owner <org> "nosemgrep: soc2-logging" --limit 100
+gh search code --owner <org> "nosemgrep" --limit 100   # unattributed suppressions
 ```
 
 Every hit MUST show `soc2-logging.<lang>.<slug> — <justification>`. A hit without a
@@ -29,7 +29,7 @@ justification is a finding, not an exception.
 ## What auditors get
 
 1. **The control**: `soc2-logging / soc2-logging` required status check on every active
-   repo's default branch (`gh api repos/finelo-subpilot/<repo>/branches/<default>/protection`).
+   repo's default branch (`gh api repos/<org>/<repo>/branches/<default>/protection`).
 2. **The rules**: this repo, versioned by tag, every rule fixture-tested in CI, and the
    packaged wheel proven to ship them (`just check`, `just smoke`). The CI workflow pins
    the rules to its own commit (`github.job_workflow_sha`), so a consumer's ref and the

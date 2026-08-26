@@ -18,7 +18,7 @@ jobs:
       # consumer gets always match the ref they called (@v2, @v2.0.0, or a sha).
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
-          repository: finelo-subpilot/compliance-rules
+          repository: talgat-abdraimov/compliance-rules
           ref: ${{ github.job_workflow_sha }}
           path: .compliance-rules
           persist-credentials: false

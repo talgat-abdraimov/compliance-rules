@@ -1,8 +1,8 @@
 # compliance-rules
 
-Centralized SOC2 logging-compliance gate for finelo-subpilot repos. Semgrep rules that
-block PII, tokens, and full-payload dumps from reaching application logs — consumed by
-every repo as a pre-commit hook and a required CI check.
+Centralized SOC2 logging-compliance gate. Semgrep rules that block PII, tokens, and
+full-payload dumps from reaching application logs — consumed by every repo as a
+pre-commit hook and a required CI check.
 
 Non-negotiable principles: every rule ships with its annotated test corpus (fixture
 first, watch it fail); rule messages are fix prompts (WHAT → WHY → replacement);
@@ -75,7 +75,7 @@ scripts, one hook, one reusable workflow, docs.
 Pre-commit block in each repo's `.pre-commit-config.yaml`:
 
 ```yaml
-- repo: https://github.com/finelo-subpilot/compliance-rules
+- repo: https://github.com/talgat-abdraimov/compliance-rules
   rev: v2.0.0
   hooks:
     - id: soc2-logging
@@ -85,7 +85,7 @@ CI job in each repo's existing workflow:
 
 ```yaml
 soc2-logging:
-  uses: finelo-subpilot/compliance-rules/.github/workflows/soc2-logging.yml@v2
+  uses: talgat-abdraimov/compliance-rules/.github/workflows/soc2-logging.yml@v2
 ```
 
 The required status check is named `soc2-logging / soc2-logging` (caller job / called

@@ -6,7 +6,7 @@
 
 Logs MUST carry no PII, credentials, or raw payloads. Enforced by the `soc2-logging`
 pre-commit hook and a required CI check (rules:
-[finelo-subpilot/compliance-rules](https://github.com/finelo-subpilot/compliance-rules)).
+[talgat-abdraimov/compliance-rules](https://github.com/talgat-abdraimov/compliance-rules)).
 Log **opaque ids only** — names suffixed `_id`/`Id` are always allowed (except identity
 documents: `national_id`, `passport_id`, `tax_id`).
 
